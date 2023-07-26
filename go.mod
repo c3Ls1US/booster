@@ -8,12 +8,12 @@ require (
 	github.com/anatol/go-udev v0.0.0-20220806124306-5f28d899f64f
 	github.com/anatol/luks.go v0.0.0-20230423170605-fb3724ed7db7
 	github.com/anatol/smart.go v0.0.0-20230705044831-c3b27137baa3
-	github.com/anatol/tang.go v0.0.0-20220716012326-2fda8b4503da
+	github.com/anatol/tang.go v0.0.0-20230725175645-dcc6e9494f14
 	github.com/anatol/vmtest v0.0.0-20230711210602-87511df0d4bc
 	github.com/cavaliergopher/cpio v1.0.1
 	github.com/google/go-tpm v0.9.0
 	github.com/google/renameio/v2 v2.0.0
-	github.com/insomniacslk/dhcp v0.0.0-20230612134759-b20c9ba983df
+	github.com/insomniacslk/dhcp v0.0.0-20230720093626-5648422c16cd
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/klauspost/compress v1.16.7
 	github.com/stretchr/testify v1.8.4
@@ -22,7 +22,7 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 	github.com/yookoala/realpath v1.0.0
 	golang.org/x/crypto v0.11.0
-	golang.org/x/sys v0.10.0
+	golang.org/x/sys v0.11.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
