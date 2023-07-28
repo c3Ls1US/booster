@@ -140,7 +140,8 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 	}
 
 	if err := cmd.Start(); err != nil {
-		return nil, err
+		logs, _ := io.ReadAll(pipeErr)
+		return nil, fmt.Errorf("fido2-assert: %v. %s", err, string(logs))
 	}
 
 	if _, err := pipeIn.Write([]byte(challenge.String())); err != nil {
