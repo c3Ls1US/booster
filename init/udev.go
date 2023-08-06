@@ -120,7 +120,7 @@ func handleUdevEvent(ev netlink.UEvent) {
 		go func() { hidrawDevices <- ev.Env["DEVNAME"] }()
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
 		go handleTpmReadyUevent(ev)
-	} else if ev.Env["SUBSYSTEM"] == "hid" && ev.Action == "bind" && ev.Env["DRIVER"] == "hid-generic" {
+	} else if ev.Env["SUBSYSTEM"] == "hid" && ev.Action == "add" {
 		go handleHidReadyUevent(ev)
 	}
 }
