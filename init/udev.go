@@ -68,15 +68,15 @@ var (
 	// Wait() will return after the TPM is ready.
 	// Only works after we start listening for udev events.
 	tpmReady   sync.Once
-	usbHid   sync.Once
+	usb        sync.Once
 	tpmReadyWg sync.WaitGroup
-	usbhidWg sync.WaitGroup
+	usbWg      sync.WaitGroup
 )
 
 func udevListener() error {
 	// Initialize tpmReadyWg
 	tpmReadyWg.Add(1)
-	usbhidWg.Add(1)
+	usbWg.Add(1)
 
 	udevConn = new(netlink.UEventConn)
 	if err := udevConn.Connect(netlink.KernelEvent); err != nil {
@@ -120,14 +120,14 @@ func handleUdevEvent(ev netlink.UEvent) {
 		go func() { hidrawDevices <- ev.Env["DEVNAME"] }()
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
 		go handleTpmReadyUevent(ev)
-	} else if ev.Env["SUBSYSTEM"] == "module" && ev.Action == "add" && ev.KObj == "/module/usbhid" {
-		go handleUsbHidUevent(ev)
+	} else if ev.Env["DRIVER"] == "usb" && ev.Env["SUBSYSTEM"] == "usb" && ev.Action == "bind" {
+		go handleUsbUevent(ev)
 	}
 }
 
-func handleUsbHidUevent(ev netlink.UEvent) {
+func handleUsbUevent(ev netlink.UEvent) {
 	info("hid available: %s", ev.Env["DEVNAME"])
-	usbHid.Do(usbhidWg.Done)
+	usb.Do(usbWg.Done)
 }
 
 func handleTpmReadyUevent(ev netlink.UEvent) {
