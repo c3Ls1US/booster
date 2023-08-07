@@ -125,7 +125,9 @@ func handleUdevEvent(ev netlink.UEvent) {
 		go handleTpmReadyUevent(ev)
 	} else if ev.Env["SUBSYSTEM"] == "drivers" && ev.Action == "add" && ev.KObj == "/bus/usb/drivers/usbhid" {
 		go handleHidUevent(ev)
-	} else if ev.Env["DRIVER"] == "hid-generic" && ev.Action == "bind" {
+	} 
+
+	if ev.Env["DRIVER"] == "hid-generic" && ev.Action == "bind" {
 		go handleHidGenericUevent(ev)
 	}
 }
