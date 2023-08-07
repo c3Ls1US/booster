@@ -120,13 +120,13 @@ func handleUdevEvent(ev netlink.UEvent) {
 		go func() { hidrawDevices <- ev.Env["DEVNAME"] }()
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
 		go handleTpmReadyUevent(ev)
-	} else if ev.Env["DRIVER"] == "usb" && ev.Env["SUBSYSTEM"] == "usb" && ev.Action == "bind" {
+	} else if ev.Env["SUBSYSTEM"] == "usb" {
 		go handleUsbUevent(ev)
 	}
 }
 
 func handleUsbUevent(ev netlink.UEvent) {
-	info("hid available: %s", ev.Env["DEVNAME"])
+	info("usb device: %s", ev.Env["DEVPATH"])
 	usb.Do(usbWg.Done)
 }
 
