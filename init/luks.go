@@ -90,7 +90,6 @@ func recoverClevisPassword(t luks.Token, luksVersion int) ([]byte, error) {
 }
 
 func recoverFido2Password(devName string, credential string, salt string, relyingParty string, pinRequired bool, userPresenceRequired bool, userVerificationRequired bool) ([]byte, error) {
-	loadModules("usbhid", "hid_sensor_hub").Wait()
 	usbHidDriverWg.Wait()
 	hidGenericWg.Wait()
 
