@@ -96,12 +96,12 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 
 	isFido2, isFido2Err := dev.isFido2()
 	if isFido2Err != nil {
-		return nil, fmt.Errorf("hidraw %s does not support FIDO2: error: "+isFido2Err.Error(), devName)
+		return nil, fmt.Errorf("%s does not support FIDO2: error: "+isFido2Err.Error(), devName)
 	}
 	if isFido2 {
-		info("hidraw %s supports FIDO2, trying it to recover the password...", devName)
+		info("%s supports FIDO2, trying it to recover the password...", devName)
 	} else {
-		info("hidraw %s does not support FIDO2, continuing...", devName)
+		info("%s does not support FIDO2, continuing...", devName)
 		return nil, fmt.Errorf("hidraw does not support FIDO2: %s" + devName)
 	}
 
@@ -128,6 +128,7 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 		args = append(args, "-t", "pin=true")
 	}
 
+	info("running fido2-assert tool...", devName)
 	cmd := exec.Command("fido2-assert", args...)
 	pipeOut, err := cmd.StdoutPipe()
 	if err != nil {
