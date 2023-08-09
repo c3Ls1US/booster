@@ -191,13 +191,10 @@ type Device struct {
 	sync.Mutex
 }
 
-func newFido2Device(path string) (*Device, error) {
-	if path == "" {
-		return nil, fmt.Errorf("Device path does not exist")
-	}
+func newFido2Device(path string) *Device {
 	return &Device{
 		path: fmt.Sprintf("%s", path),
-	}, nil
+	}
 }
 
 func (d *Device) openFido2Device() (*C.fido_dev_t, error) {
