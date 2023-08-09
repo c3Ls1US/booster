@@ -99,8 +99,11 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 		return nil, fmt.Errorf("HID does not support FIDO: %s"+" libfido2 : "+isFido2Err.Error(), devName)
 	}
 	if isFido2 {
-		info("HID %s supports FIDO, trying it to recover the password", devName)
-	} 
+		info("hidraw %s supports FIDO2, trying it to recover the password...", devName)
+	} else {
+		info("hidraw %s does not support FIDO2, continuing...", devName)
+		return nil, fmt.Errorf("hidraw does not support FIDO2: %s" + devName)
+	}
 
 	var challenge strings.Builder
 	const zeroString = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" // 32byte zero string encoded as hex, hex.EncodeToString(make([]byte, 32))
