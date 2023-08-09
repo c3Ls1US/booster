@@ -92,17 +92,19 @@ func recoverClevisPassword(t luks.Token, luksVersion int) ([]byte, error) {
 func recoverFido2Password(devName string, credential string, salt string, relyingParty string, pinRequired bool, userPresenceRequired bool, userVerificationRequired bool) ([]byte, error) {
 	usbhidWg.Wait()
 
-	ueventContent, err := os.ReadFile("/sys/class/hidraw/" + devName + "/device/uevent")
-	if err != nil {
-		return nil, fmt.Errorf("unable to read uevent file for %s", devName)
+	dev, devErr := newFido2Device("/dev/" + devName)
+	if devErr != nil {
+		return nil, fmt.Errorf("unable to hidraw for %s", devErr.Error())
 	}
 
-	// TODO: find better way to identify devices that support FIDO2
-	if !strings.Contains(string(ueventContent), "FIDO") {
-		return nil, fmt.Errorf("HID %s does not support FIDO", devName)
+	isFido2, isFido2Err := dev.isFido2()
+	if isFido2Err != nil {
+		return nil, fmt.Errorf("HID does not support FIDO: %s", devErr.Error())
 	}
 
-	info("HID %s supports FIDO, trying it to recover the password", devName)
+	if isFido2 {
+		info("HID %s supports FIDO, trying it to recover the password", devName)
+	}
 
 	var challenge strings.Builder
 	const zeroString = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" // 32byte zero string encoded as hex, hex.EncodeToString(make([]byte, 32))
