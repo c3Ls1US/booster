@@ -128,7 +128,7 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 		args = append(args, "-t", "pin=true")
 	}
 
-	info("running fido2-assert tool...", devName)
+	info("running fido2-assert tool for %s", devName)
 	cmd := exec.Command("fido2-assert", args...)
 	pipeOut, err := cmd.StdoutPipe()
 	if err != nil {
