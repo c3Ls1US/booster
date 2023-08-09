@@ -96,7 +96,7 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 
 	isFido2, isFido2Err := dev.isFido2()
 	if isFido2Err != nil {
-		return nil, fmt.Errorf("HID does not support FIDO: %s"+" libfido2 : "+isFido2Err.Error(), devName)
+		return nil, fmt.Errorf("hidraw %s does not support FIDO2: error: "+isFido2Err.Error(), devName)
 	}
 	if isFido2 {
 		info("hidraw %s supports FIDO2, trying it to recover the password...", devName)
