@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -90,11 +91,15 @@ func recoverClevisPassword(t luks.Token, luksVersion int) ([]byte, error) {
 }
 
 func recoverFido2Password(devName string, credential string, salt string, relyingParty string, pinRequired bool, userPresenceRequired bool, userVerificationRequired bool) ([]byte, error) {
+	fmt.Println("luks: recoverFido2Password() was called...")
 	usbhidWg.Wait()
 
 	dev := newFido2Device("/dev/" + devName)
 
+	startTime := time.Now()
 	isFido2, isFido2Err := dev.isFido2()
+	duration := time.Since(startTime)
+	fmt.Println("time in seconds for opening: ", strconv.FormatFloat(duration.Seconds(), 'f', 2, 64))
 	if isFido2Err != nil {
 		return nil, fmt.Errorf("%s does not support FIDO2: error: "+isFido2Err.Error(), devName)
 	}
