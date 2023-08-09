@@ -95,12 +95,10 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 	dev := newFido2Device("/dev/" + devName)
 
 	isFido2, isFido2Err := dev.isFido2()
-	if isFido2Err != nil {
-		return nil, fmt.Errorf("HID does not support FIDO: %s", devErr.Error())
-	}
-
 	if isFido2 {
 		info("HID %s supports FIDO, trying it to recover the password", devName)
+	} else {
+		return nil, fmt.Errorf("HID does not support FIDO: %s" + " libfido2 : " + isFido2Err.Error(), devName)
 	}
 
 	var challenge strings.Builder
