@@ -1,5 +1,14 @@
 package main
 
+// #cgo CFLAGS: -I/usr/include/
+// #cgo LDFLAGS: -lfido2
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <fido.h>
+// #include <fido/bio.h>
+// #include <fido/credman.h>
+import "C"
+
 import (
 	"bytes"
 	"encoding/binary"
@@ -173,4 +182,51 @@ func unwrapExitError(err error) error {
 		return fmt.Errorf("%v: %v", err, string(exitErr.Stderr))
 	}
 	return err
+}
+
+type Device struct {
+	path string
+	// Device instance if open.
+	dev *C.fido_dev_t
+	sync.Mutex
+}
+
+func newFido2Device(path string) (*Device, error) {
+	if path == "" {
+		return nil, fmt.Errorf("Device path does not exist")
+	}
+	return &Device{
+		path: fmt.Sprintf("%s", path),
+	}, nil
+}
+
+func (d *Device) openFido2Device() (*C.fido_dev_t, error) {
+	dev := C.fido_dev_new()
+	if cErr := C.fido_dev_open(dev, C.CString(d.path)); cErr != C.FIDO_OK {
+		// return nil, errors.Wrap(errFromCode(cErr), "failed to open")
+	}
+	d.dev = dev
+	return dev, nil
+}
+
+func (d *Device) closeFido2Device(dev *C.fido_dev_t) {
+	d.Lock()
+	d.dev = nil
+	d.Unlock()
+
+	if cErr := C.fido_dev_close(dev); cErr != C.FIDO_OK {
+		// logger.Errorf("%v", errors.Wrap(errFromCode(cErr), "failed to close"))
+	}
+	C.fido_dev_free(&dev)
+}
+
+func (d *Device) isFido2() (bool, error) {
+	dev, err := d.openFido2Device()
+	if err != nil {
+		return false, err
+	}
+	defer d.closeFido2Device(dev)
+
+	isFido2 := bool(C.fido_dev_is_fido2(dev))
+	return isFido2, nil
 }
