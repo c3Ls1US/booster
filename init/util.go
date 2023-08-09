@@ -200,7 +200,8 @@ func newFido2Device(path string) *Device {
 func (d *Device) openFido2Device() (*C.fido_dev_t, error) {
 	dev := C.fido_dev_new()
 	if cErr := C.fido_dev_open(dev, C.CString(d.path)); cErr != C.FIDO_OK {
-		// return nil, errors.Wrap(errFromCode(cErr), "failed to open")
+		// TODO: needs better handling of various error types thrown from libfido2
+		return nil, fmt.Errorf("failed to open hidraw device")
 	}
 	d.dev = dev
 	return dev, nil
@@ -212,7 +213,8 @@ func (d *Device) closeFido2Device(dev *C.fido_dev_t) {
 	d.Unlock()
 
 	if cErr := C.fido_dev_close(dev); cErr != C.FIDO_OK {
-		// logger.Errorf("%v", errors.Wrap(errFromCode(cErr), "failed to close"))
+		// TODO: needs better handling of various error types thrown from libfido2
+		info("failed to close hidraw device")
 	}
 	C.fido_dev_free(&dev)
 }
