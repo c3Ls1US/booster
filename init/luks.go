@@ -92,10 +92,7 @@ func recoverClevisPassword(t luks.Token, luksVersion int) ([]byte, error) {
 func recoverFido2Password(devName string, credential string, salt string, relyingParty string, pinRequired bool, userPresenceRequired bool, userVerificationRequired bool) ([]byte, error) {
 	usbhidWg.Wait()
 
-	dev, devErr := newFido2Device("/dev/" + devName)
-	if devErr != nil {
-		return nil, fmt.Errorf("unable to hidraw for %s", devErr.Error())
-	}
+	dev := newFido2Device("/dev/" + devName)
 
 	isFido2, isFido2Err := dev.isFido2()
 	if isFido2Err != nil {
