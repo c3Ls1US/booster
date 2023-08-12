@@ -68,15 +68,12 @@ var (
 	// Wait() will return after the TPM is ready.
 	// Only works after we start listening for udev events.
 	tpmReady   sync.Once
-	usbhid     sync.Once
 	tpmReadyWg sync.WaitGroup
-	usbhidWg   sync.WaitGroup
 )
 
 func udevListener() error {
 	// Initialize tpmReadyWg
 	tpmReadyWg.Add(1)
-	usbhidWg.Add(1)
 
 	udevConn = new(netlink.UEventConn)
 	if err := udevConn.Connect(netlink.KernelEvent); err != nil {
@@ -112,10 +109,6 @@ func handleUdevEvent(ev netlink.UEvent) {
 
 	if modalias, ok := ev.Env["MODALIAS"]; ok {
 		go func() { check(loadModalias(normalizeModuleName(modalias))) }()
-		// bind actions associated with the hid-generic driver have an alias
-		if ev.Env["DRIVER"] == "usbhid" && ev.Action == "bind" {
-			go handleUsbHidUevent(ev)
-		}
 	} else if ev.Env["SUBSYSTEM"] == "block" {
 		go func() { check(handleBlockDeviceUevent(ev)) }()
 	} else if ev.Env["SUBSYSTEM"] == "net" {
@@ -125,11 +118,6 @@ func handleUdevEvent(ev netlink.UEvent) {
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
 		go handleTpmReadyUevent(ev)
 	}
-}
-
-func handleUsbHidUevent(ev netlink.UEvent) {
-	info(ev.Env["DRIVER"]+" uevent: device: %s", ev.Env["DEVPATH"])
-	usbhid.Do(usbhidWg.Done)
 }
 
 func handleTpmReadyUevent(ev netlink.UEvent) {
