@@ -15,7 +15,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -91,25 +90,17 @@ func recoverClevisPassword(t luks.Token, luksVersion int) ([]byte, error) {
 }
 
 func recoverFido2Password(devName string, credential string, salt string, relyingParty string, pinRequired bool, userPresenceRequired bool, userVerificationRequired bool) ([]byte, error) {
-	info("luks: recoverFido2Password() was called...")
-	usbhidWg.Wait()
-
-	dev := newFido2Device("/dev/" + devName)
-
-	startTime := time.Now()
-	isFido2, isFido2Err := dev.isFido2()
-	duration := time.Since(startTime)
-	info("time in seconds for opening: %s", strconv.FormatFloat(duration.Seconds(), 'f', 2, 64))
-	if isFido2Err != nil {
-		return nil, fmt.Errorf("%s does not support FIDO2: error: "+isFido2Err.Error(), devName)
+	dev := NewFido2Device("/dev/" + devName)
+	isFido2, err := dev.IsFido2()
+	if err != nil {
+		info("%s does not support FIDO2: error code: "+err.Error(), devName)
 	}
-	if isFido2 {
-		info("%s supports FIDO2, trying it to recover the password...", devName)
-	} else {
+	if !isFido2 {
 		info("%s does not support FIDO2, continuing...", devName)
 		return nil, fmt.Errorf("hidraw does not support FIDO2: %s" + devName)
 	}
 
+	info("%s supports FIDO2, trying it to recover the password...", devName)
 	var challenge strings.Builder
 	const zeroString = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" // 32byte zero string encoded as hex, hex.EncodeToString(make([]byte, 32))
 	challenge.WriteString(zeroString)                                 // client data, an empty string
