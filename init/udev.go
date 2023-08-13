@@ -76,6 +76,7 @@ var (
 func udevListener() error {
 	// Initialize tpmReadyWg
 	tpmReadyWg.Add(1)
+	usbHidWg.Add(1)
 
 	udevConn = new(netlink.UEventConn)
 	if err := udevConn.Connect(netlink.KernelEvent); err != nil {
