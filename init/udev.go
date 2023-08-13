@@ -104,6 +104,8 @@ exit:
 	return nil
 }
 
+var seenHidrawDevices = make(chan string, 10)
+
 func handleUdevEvent(ev netlink.UEvent) {
 	debug("udev event %+v", ev)
 
@@ -114,9 +116,24 @@ func handleUdevEvent(ev netlink.UEvent) {
 	} else if ev.Env["SUBSYSTEM"] == "net" {
 		go func() { check(handleNetworkUevent(ev)) }()
 	} else if ev.Env["SUBSYSTEM"] == "hidraw" && ev.Action == "add" {
-		go func() { hidrawDevices <- ev.Env["DEVNAME"] }()
+		// /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0003:1050:0402.0007/hidraw/hidraw0
+		seenHidrawDevices <- ev.Env["DEVPATH"]
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
 		go handleTpmReadyUevent(ev)
+	} else if ev.Env["SUBSYSTEM"] == "hid" && ev.Action == "bind" {
+
+		// devices that have been added and bounded will be checked for fido2 support
+		// consequently, it's expected that the device's drivers and modules should be loaded before the check 
+		for dev := range seenHidrawDevices {
+			// example of device path on bind: /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0003:1050:0402.0007
+			if strings.HasSuffix(dev, ev.Env["DEVNAME"]) {
+				// get the hidraw
+				idx := strings.LastIndex(dev, "/")
+				if idx != -1 {
+					hidrawDevices <- dev[idx+1:]
+				}
+			}
+		}
 	}
 }
 
