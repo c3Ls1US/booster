@@ -111,6 +111,9 @@ func handleUdevEvent(ev netlink.UEvent) {
 
 	if modalias, ok := ev.Env["MODALIAS"]; ok {
 		go func() { check(loadModalias(normalizeModuleName(modalias))) }()
+		if ev.Env["SUBSYSTEM"] == "hid" && ev.Action == "bind" {
+			go handleHidBindUevent(ev)
+		}
 	} else if ev.Env["SUBSYSTEM"] == "block" {
 		go func() { check(handleBlockDeviceUevent(ev)) }()
 	} else if ev.Env["SUBSYSTEM"] == "net" {
@@ -123,9 +126,7 @@ func handleUdevEvent(ev netlink.UEvent) {
 		}()
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
 		go handleTpmReadyUevent(ev)
-	} else if ev.Env["SUBSYSTEM"] == "hid" && ev.Action == "bind" {
-		go handleHidBindUevent(ev)
-	}
+	} 
 }
 
 // devices that have been added and bounded will be checked for fido2 support
