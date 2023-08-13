@@ -98,8 +98,7 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 		info("%s does not support FIDO2: error code: "+err.Error(), devName)
 	}
 	if !isFido2 {
-		info("%s does not support FIDO2, continuing...", devName)
-		return nil, fmt.Errorf("%s does not support FIDO2", devName)
+		return nil, fmt.Errorf("%s does not support FIDO2, continuing...", devName)
 	}
 
 	info("%s supports FIDO2, trying it to recover the password...", devName)
