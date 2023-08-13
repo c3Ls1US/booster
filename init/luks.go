@@ -90,16 +90,12 @@ func recoverClevisPassword(t luks.Token, luksVersion int) ([]byte, error) {
 }
 
 func recoverFido2Password(devName string, credential string, salt string, relyingParty string, pinRequired bool, userPresenceRequired bool, userVerificationRequired bool) ([]byte, error) {
-	ch := make(chan bool)
-	go func() {
-		dev := NewFido2Device("/dev/" + devName)
-		isFido2, err := dev.IsFido2()
-		if err != nil {
-			info("%s does not support FIDO2: error code: "+err.Error(), devName)
-		}
-		ch <- isFido2
-	}()
-	if isFido2 := <-ch; !isFido2 {
+	dev := NewFido2Device("/dev/" + devName)
+	isFido2, err := dev.IsFido2()
+	if err != nil {
+		info("%s does not support FIDO2: error code: "+err.Error(), devName)
+	}
+	if isFido2 {
 		info("%s does not support FIDO2, continuing...", devName)
 		return nil, fmt.Errorf("%s does not support FIDO2", devName)
 	}
