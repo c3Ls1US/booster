@@ -203,18 +203,6 @@ func recoverSystemdFido2Password(t luks.Token) ([]byte, error) {
 		node.RelyingParty = "io.systemd.cryptsetup"
 	}
 
-	dir, err := os.ReadDir("/sys/class/hidraw/")
-	if err != nil {
-		return nil, err
-	}
-
-	go func() {
-		for _, d := range dir {
-			// run it in a separate goroutine to avoid blocking on channel
-			hidrawDevices <- d.Name()
-		}
-	}()
-
 	seenHidrawDevices := make(set)
 
 	for devName := range hidrawDevices {
