@@ -162,8 +162,6 @@ func handleHidBindUevent(ev netlink.UEvent) {
 			// get the hidraw
 			idx := strings.LastIndex(dev, "/")
 			if idx != -1 {
-				usbHidWg.Wait()
-				usbMiscWg.Wait()
 				hidrawDevices <- dev[idx+1:]
 			}
 		}
