@@ -117,8 +117,9 @@ func handleUdevEvent(ev netlink.UEvent) {
 	} else if ev.Env["SUBSYSTEM"] == "net" {
 		go func() { check(handleNetworkUevent(ev)) }()
 	} else if ev.Env["SUBSYSTEM"] == "hidraw" && ev.Action == "add" {
+		// add it to a channel to be filtered after it has been added
 		go func() {
-			// devpath: /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0003:1050:0402.0005/hidraw/hidraw1
+			// /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0003:1050:0402.0005/hidraw/hidraw1
 			seenHidrawDevices <- ev.Env["DEVPATH"]
 		}()
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
@@ -126,11 +127,12 @@ func handleUdevEvent(ev netlink.UEvent) {
 	} 
 }
 
-// sends only hidraw devices with a usbhid driver to a global channel
+// filters hidraw devices by device path that were previously added
+// we only care about the fido2 hidraw devices, which depend on the usbhid driver 
 func handleUsbBindUevent(ev netlink.UEvent) {
 	if ev.Env["SUBSYSTEM"] == "usb" && ev.Action == "bind" && ev.Env["DRIVER"] == "usbhid" {
 		for dev := range seenHidrawDevices {
-			// devpath: /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0
+			// /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0
 			if strings.Contains(dev, ev.Env["DEVPATH"]) {
 				// get the hidraw
 				idx := strings.LastIndex(dev, "/")
