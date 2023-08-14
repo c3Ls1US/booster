@@ -138,8 +138,9 @@ func handleUdevEvent(ev netlink.UEvent) {
 func handleHidBindUevent(ev netlink.UEvent) {
 	if ev.Env["SUBSYSTEM"] == "usb" && ev.Action == "bind" && ev.Env["DRIVER"] == "usbhid" {
 		for dev := range seenHidrawDevices {
-			// example of device path on bind: /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0
-			if strings.HasSuffix(dev, ev.Env["DEVNAME"]) {
+			// example of device path on bind: /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0
+			// example of device path on add: /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0003:1050:0402.0005/hidraw/hidraw1
+			if strings.Contains(dev, ev.Env["DEVPATH"]) {
 				// get the hidraw
 				idx := strings.LastIndex(dev, "/")
 				if idx != -1 {
