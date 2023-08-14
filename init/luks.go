@@ -90,6 +90,18 @@ func recoverClevisPassword(t luks.Token, luksVersion int) ([]byte, error) {
 }
 
 func recoverFido2Password(devName string, credential string, salt string, relyingParty string, pinRequired bool, userPresenceRequired bool, userVerificationRequired bool) ([]byte, error) {
+	usbHidWg.Wait()
+	usbMiscWg.Wait()
+
+	dev := NewFido2Device("/dev/" + devName)
+	isFido2, err := dev.IsFido2()
+	if err != nil {
+		info("%s does not support FIDO2: error code: "+err.Error(), devName)
+	}
+	if !isFido2 {
+		return nil, fmt.Errorf("%s does not support FIDO2, continuing...", devName)
+	}
+
 	info("%s supports FIDO2, trying it to recover the password...", devName)
 	var challenge strings.Builder
 	const zeroString = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" // 32byte zero string encoded as hex, hex.EncodeToString(make([]byte, 32))
@@ -200,22 +212,6 @@ func recoverSystemdFido2Password(t luks.Token) ([]byte, error) {
 			continue
 		}
 		seenHidrawDevices[devName] = true
-
-		ch := make(chan bool)
-		go func() {
-			usbHidWg.Wait()
-			usbMiscWg.Wait()
-			dev := NewFido2Device("/dev/" + devName)
-			isFido2, err := dev.IsFido2()
-			if err != nil {
-				info("%s does not support FIDO2: error code: "+err.Error(), devName)
-			}
-			ch <- isFido2
-		}()
-		if isFido2 := <-ch; !isFido2 {
-			info("%s does not support FIDO2, continuing", devName)
-			continue
-		}
 
 		password, err := recoverFido2Password(devName, node.Credential, node.Salt, node.RelyingParty, node.PinRequired, node.UserPresenceRequired, node.UserVerificationRequired)
 		if err != nil {
