@@ -65,18 +65,21 @@ func validDmEvent(ev netlink.UEvent) bool {
 var (
 	udevQuitLoop chan struct{}
 	udevConn     *netlink.UEventConn
+	usbhid     sync.Once
+	usbMisc    sync.Once
 	// Wait() will return after the TPM is ready.
 	// Only works after we start listening for udev events.
-	usbhid     sync.Once
 	tpmReady   sync.Once
 	tpmReadyWg sync.WaitGroup
 	usbHidWg   sync.WaitGroup
+	usbMiscWg  sync.WaitGroup
 )
 
 func udevListener() error {
 	// Initialize tpmReadyWg
 	tpmReadyWg.Add(1)
 	usbHidWg.Add(1)
+	usbMiscWg.Add(1)
 
 	udevConn = new(netlink.UEventConn)
 	if err := udevConn.Connect(netlink.KernelEvent); err != nil {
@@ -131,6 +134,15 @@ func handleUdevEvent(ev netlink.UEvent) {
 		go handleTpmReadyUevent(ev)
 	} else if ev.Env["SUBSYSTEM"] == "drivers" && ev.Action == "add" {
 		go handleDriversUevent(ev)
+	} else if ev.Env["SUBSYSTEM"] == "class" && ev.Action == "add" {
+		handleClassUevent(ev)
+	}
+}
+
+func handleClassUevent(ev netlink.UEvent) {
+	if ev.KObj == "/class/usbmisc" {
+		info(ev.Env["class"]+" uevent: class: %s", ev.KObj)
+		usbMisc.Do(usbMiscWg.Done)
 	}
 }
 
@@ -150,6 +162,8 @@ func handleHidBindUevent(ev netlink.UEvent) {
 			// get the hidraw
 			idx := strings.LastIndex(dev, "/")
 			if idx != -1 {
+				usbHidWg.Wait()
+				usbMiscWg.Wait()
 				hidrawDevices <- dev[idx+1:]
 			}
 		}
