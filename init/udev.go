@@ -110,18 +110,21 @@ exit:
 	return nil
 }
 
+var seenHidrawDevices = make(chan string, 10)
+
 func handleUdevEvent(ev netlink.UEvent) {
 	debug("udev event %+v", ev)
 
 	if modalias, ok := ev.Env["MODALIAS"]; ok {
 		go func() { check(loadModalias(normalizeModuleName(modalias))) }()
+		go handleHidBindUevent(ev)
 	} else if ev.Env["SUBSYSTEM"] == "block" {
 		go func() { check(handleBlockDeviceUevent(ev)) }()
 	} else if ev.Env["SUBSYSTEM"] == "net" {
 		go func() { check(handleNetworkUevent(ev)) }()
 	} else if ev.Env["SUBSYSTEM"] == "hidraw" && ev.Action == "add" {
 		go func() {
-			hidrawDevices <- ev.Env["DEVNAME"]
+			seenHidrawDevices <- ev.Env["DEVPATH"]
 		}()
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
 		go handleTpmReadyUevent(ev)
@@ -129,6 +132,21 @@ func handleUdevEvent(ev netlink.UEvent) {
 		go handleDriversUevent(ev)
 	} else if ev.Env["SUBSYSTEM"] == "class" && ev.Action == "add" {
 		handleClassUevent(ev)
+	}
+}
+
+func handleHidBindUevent(ev netlink.UEvent) {
+	if ev.Env["SUBSYSTEM"] == "hid" && ev.Action == "bind" && ev.Env["DRIVER"] == "usbhid" {
+		for dev := range seenHidrawDevices {
+			// example of device path on bind: /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0
+			if strings.HasSuffix(dev, ev.Env["DEVNAME"]) {
+				// get the hidraw
+				idx := strings.LastIndex(dev, "/")
+				if idx != -1 {
+					hidrawDevices <- dev[idx+1:]
+				}
+			}
+		}
 	}
 }
 
