@@ -65,8 +65,8 @@ func validDmEvent(ev netlink.UEvent) bool {
 var (
 	udevQuitLoop chan struct{}
 	udevConn     *netlink.UEventConn
-	usbhid     sync.Once
-	usbMisc    sync.Once
+	usbhid       sync.Once
+	usbMisc      sync.Once
 	// Wait() will return after the TPM is ready.
 	// Only works after we start listening for udev events.
 	tpmReady   sync.Once
@@ -147,7 +147,6 @@ func handleDriversUevent(ev netlink.UEvent) {
 		usbhid.Do(usbHidWg.Done)
 	}
 }
-
 
 func handleTpmReadyUevent(ev netlink.UEvent) {
 	info("tpm available: %s", ev.Env["DEVNAME"])
