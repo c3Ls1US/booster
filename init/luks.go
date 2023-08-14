@@ -204,8 +204,6 @@ func recoverSystemdFido2Password(t luks.Token) ([]byte, error) {
 
 	seenHidrawDevices := make(set)
 
-	loadModules("usbhid").Wait()
-	usbHidWg.Wait()
 	for devName := range hidrawDevices {
 		if seenHidrawDevices[devName] {
 			continue
