@@ -110,8 +110,6 @@ exit:
 	return nil
 }
 
-var seenHidrawDevices = make(chan string, 10)
-
 func handleUdevEvent(ev netlink.UEvent) {
 	debug("udev event %+v", ev)
 
