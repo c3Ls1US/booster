@@ -136,7 +136,7 @@ func handleUdevEvent(ev netlink.UEvent) {
 
 func handleDriversUevent(ev netlink.UEvent) {
 	if ev.KObj == "/bus/usb/drivers/usbhid" {
-		info("drivers loaded: %s", ev.KObj)
+		info(ev.Env["class"]+" uevent: drivers: %s", ev.KObj)
 		usbhid.Do(usbHidWg.Done)
 	}
 }
