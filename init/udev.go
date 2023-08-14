@@ -66,20 +66,17 @@ var (
 	udevQuitLoop chan struct{}
 	udevConn     *netlink.UEventConn
 	usbhid       sync.Once
-	usbMisc      sync.Once
 	// Wait() will return after the TPM is ready.
 	// Only works after we start listening for udev events.
 	tpmReady   sync.Once
 	tpmReadyWg sync.WaitGroup
 	usbHidWg   sync.WaitGroup
-	usbMiscWg  sync.WaitGroup
 )
 
 func udevListener() error {
 	// Initialize tpmReadyWg
 	tpmReadyWg.Add(1)
 	usbHidWg.Add(1)
-	usbMiscWg.Add(1)
 
 	udevConn = new(netlink.UEventConn)
 	if err := udevConn.Connect(netlink.KernelEvent); err != nil {
@@ -117,29 +114,28 @@ func handleUdevEvent(ev netlink.UEvent) {
 
 	if modalias, ok := ev.Env["MODALIAS"]; ok {
 		go func() { check(loadModalias(normalizeModuleName(modalias))) }()
-		go handleHidBindUevent(ev)
+		go handleUsbBindUevent(ev)
 	} else if ev.Env["SUBSYSTEM"] == "block" {
 		go func() { check(handleBlockDeviceUevent(ev)) }()
 	} else if ev.Env["SUBSYSTEM"] == "net" {
 		go func() { check(handleNetworkUevent(ev)) }()
 	} else if ev.Env["SUBSYSTEM"] == "hidraw" && ev.Action == "add" {
 		go func() {
+			// devpath: /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0003:1050:0402.0005/hidraw/hidraw1
 			seenHidrawDevices <- ev.Env["DEVPATH"]
 		}()
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
 		go handleTpmReadyUevent(ev)
 	} else if ev.Env["SUBSYSTEM"] == "drivers" && ev.Action == "add" {
 		go handleDriversUevent(ev)
-	} else if ev.Env["SUBSYSTEM"] == "class" && ev.Action == "add" {
-		handleClassUevent(ev)
-	}
+	} 
 }
 
-func handleHidBindUevent(ev netlink.UEvent) {
+// sends only hidraw devices with a usbhid driver to a global channel
+func handleUsbBindUevent(ev netlink.UEvent) {
 	if ev.Env["SUBSYSTEM"] == "usb" && ev.Action == "bind" && ev.Env["DRIVER"] == "usbhid" {
 		for dev := range seenHidrawDevices {
-			// example of device path on bind: /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0
-			// example of device path on add: /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0003:1050:0402.0005/hidraw/hidraw1
+			// devpath: /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0
 			if strings.Contains(dev, ev.Env["DEVPATH"]) {
 				// get the hidraw
 				idx := strings.LastIndex(dev, "/")
@@ -148,13 +144,6 @@ func handleHidBindUevent(ev netlink.UEvent) {
 				}
 			}
 		}
-	}
-}
-
-func handleClassUevent(ev netlink.UEvent) {
-	if ev.KObj == "/class/usbmisc" {
-		info(ev.Env["class"]+" uevent: class: %s", ev.KObj)
-		usbMisc.Do(usbMiscWg.Done)
 	}
 }
 
