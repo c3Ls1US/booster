@@ -65,18 +65,15 @@ func validDmEvent(ev netlink.UEvent) bool {
 var (
 	udevQuitLoop chan struct{}
 	udevConn     *netlink.UEventConn
-	usbhid       sync.Once
 	// Wait() will return after the TPM is ready.
 	// Only works after we start listening for udev events.
 	tpmReady   sync.Once
 	tpmReadyWg sync.WaitGroup
-	usbHidWg   sync.WaitGroup
 )
 
 func udevListener() error {
 	// Initialize tpmReadyWg
 	tpmReadyWg.Add(1)
-	usbHidWg.Add(1)
 
 	udevConn = new(netlink.UEventConn)
 	if err := udevConn.Connect(netlink.KernelEvent); err != nil {
@@ -126,8 +123,6 @@ func handleUdevEvent(ev netlink.UEvent) {
 		}()
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
 		go handleTpmReadyUevent(ev)
-	} else if ev.Env["SUBSYSTEM"] == "drivers" && ev.Action == "add" {
-		go handleDriversUevent(ev)
 	} 
 }
 
@@ -144,13 +139,6 @@ func handleUsbBindUevent(ev netlink.UEvent) {
 				}
 			}
 		}
-	}
-}
-
-func handleDriversUevent(ev netlink.UEvent) {
-	if ev.KObj == "/bus/usb/drivers/usbhid" {
-		info(ev.Env["class"]+" uevent: drivers: %s", ev.KObj)
-		usbhid.Do(usbHidWg.Done)
 	}
 }
 
