@@ -168,6 +168,11 @@ type Device struct {
 	sync.Mutex
 }
 
+// Initiliaze the library
+func Fido2Init() {
+	C.fido_init(0)
+}
+
 func NewFido2Device(path string) *Device {
 	return &Device{
 		path: fmt.Sprintf("%s", path),
