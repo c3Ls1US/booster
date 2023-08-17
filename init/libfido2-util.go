@@ -159,6 +159,7 @@ type User struct {
 
 type Assertion struct {
 	HMACSecret      []byte
+	HMACSecretLarge []byte
 }
 
 // FIDO2 Device
@@ -330,8 +331,15 @@ func (d *Device) AssertFido2Device(
 	cHMACPtr := C.fido_assert_hmac_secret_ptr(cAssert, cIdx)
 	hmacSecret := C.GoBytes(unsafe.Pointer(cHMACPtr), C.int(cHMACLen))
 
+	/* 	 The fido_assert_blob_ptr() and fido_assert_largeblob_key_ptr() functions return pointers to the “credBlob” and “largeBlobKey” attributes of statement idx in assert. Credential Blob (credBlob) and Large Blob Key (largeBlobKey) are CTAP 2.1 extensions. */
+	cHMACLenLarge := C.fido_assert_largeblob_key_len(cAssert, cIdx)
+	cHMACPtrLarge := C.fido_assert_largeblob_key_ptr(cAssert, cIdx)
+	hmacSecretLarge := C.GoBytes(unsafe.Pointer(cHMACPtrLarge), C.int(cHMACLenLarge))
+
+	// TODO: if the larger hmac secret blobs make a difference, implement functionality to detect features
 	assertion := &Assertion{
-		HMACSecret: hmacSecret,
+		HMACSecret:      hmacSecret,
+		HMACSecretLarge: hmacSecretLarge,
 	}
 	return assertion, nil
 }
