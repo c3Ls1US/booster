@@ -158,7 +158,7 @@ type User struct {
 }
 
 type Assertion struct {
-	HMACSecret []byte
+	HMACSecret      []byte
 }
 
 // FIDO2 Device
