@@ -129,7 +129,7 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 	if assert.HMACSecret != nil {
 		// just print the hash for comparison
 		sum := sha256.Sum256(assert.HMACSecret)
-		info("used libfido2 when retrieving hmac secret for %s", devName)
+		info("used libfido2 to retrieve hmac secret for %s", devName)
 		info("sha256: %x", sum)
 	}
 
