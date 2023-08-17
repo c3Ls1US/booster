@@ -120,8 +120,9 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 	assert, err := dev.AssertFido2Device(relyingParty, cdh, [][]byte{cred}, "", &AssertionOpts{
 		Extensions: []Extension{HMACSecretExtension},
 		HMACSalt:   hmacSalt,
-		UV: False,
-		UP: True,
+		// if pin is required, set to true. otherwise, don't set to false 
+		// UV:         False,
+		UP:         True,
 	})
 	if err != nil {
 		return nil, err
