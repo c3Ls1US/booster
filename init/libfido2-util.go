@@ -324,6 +324,8 @@ func (d *Device) AssertFido2Device(
 
 	cIdx := C.size_t(0)
 
+	/* The fido_assert_hmac_secret_ptr() function returns a pointer to the hmac-secret attribute of statement idx in assert. The HMAC Secret Extension (hmac-secret) is a CTAP 2.0 extension. Note that the resulting hmac-secret varies according to whether user verification was performed by the authenticator.
+	   - https://developers.yubico.com/libfido2/Manuals/fido_assert_largeblob_key_ptr.html */
 	cHMACLen := C.fido_assert_hmac_secret_len(cAssert, cIdx)
 	cHMACPtr := C.fido_assert_hmac_secret_ptr(cAssert, cIdx)
 	hmacSecret := C.GoBytes(unsafe.Pointer(cHMACPtr), C.int(cHMACLen))
