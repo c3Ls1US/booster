@@ -117,7 +117,7 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 	}
 
 	// TODO: handle the case with pins
-	assert, err := dev.AssertFido2Device(relyingParty, cdh, [][]byte{cred}, "", &AssertionOpts{
+	assert, err := dev.AssertFido2Device(relyingParty, cdh, cred, "", &AssertionOpts{
 		Extensions: []Extension{HMACSecretExtension},
 		HMACSalt:   hmacSalt,
 		// if pin is required, set to true. otherwise, don't set to false 
