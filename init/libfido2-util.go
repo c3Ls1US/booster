@@ -276,27 +276,27 @@ func (d *Device) AssertFido2Device(
 	cAssert := C.fido_assert_new()
 	defer C.fido_assert_free(&cAssert)
 
-	// relying party
+	// set the relying party
 	if cErr := C.fido_assert_set_rp(cAssert, C.CString(rpID)); cErr != C.FIDO_OK {
 		return nil, fmt.Errorf("failed to set up assertion relying party id: %w", errFromCode(cErr))
 	}
-	// client data hash
+	// set the client data hash
 	if cErr := C.fido_assert_set_clientdata_hash(cAssert, getCBytes(clientDataHash), getCLen(clientDataHash)); cErr != C.FIDO_OK {
 		return nil, fmt.Errorf("failed to set client data hash: %w", errFromCode(cErr))
 	}
-	// credential id
 	for _, credentialID := range credentialIDs {
 		if cErr := C.fido_assert_allow_cred(cAssert, getCBytes(credentialID), getCLen(credentialID)); cErr != C.FIDO_OK {
 			return nil, fmt.Errorf("failed to set allowed credentials: %w", errFromCode(cErr))
 		}
+	// set the credential id
 	}
-	// extension
 	if exts := getExtensionsInt(opts.Extensions); exts > 0 {
 		if cErr := C.fido_assert_set_extensions(cAssert, C.int(exts)); cErr != C.FIDO_OK {
 			return nil, fmt.Errorf("failed to set extensions: %w", errFromCode(cErr))
 		}
+	// set the extension
 	}
-	// options
+	// set the options
 	cUV, err := getCOpt(opts.UV)
 	if err != nil {
 		return nil, err
@@ -311,22 +311,24 @@ func (d *Device) AssertFido2Device(
 	if cErr := C.fido_assert_set_up(cAssert, cUP); cErr != C.FIDO_OK {
 		return nil, fmt.Errorf("failed to set UP option: %w", errFromCode(cErr))
 	}
-	// hmac
+	// set the hmac salt
 	if opts.HMACSalt != nil {
 		if cErr := C.fido_assert_set_hmac_salt(cAssert, getCBytes(opts.HMACSalt), getCLen(opts.HMACSalt)); cErr != C.FIDO_OK {
 			return nil, fmt.Errorf("failed to set hmac salt: %w", errFromCode(cErr))
 		}
 	}
 
-	// assert
+	// assert the device
 	if cErr := C.fido_dev_get_assert(dev, cAssert, getCStringOrNil(pin)); cErr != C.FIDO_OK {
 		return nil, fmt.Errorf("failed to get assertion: %w", errFromCode(cErr))
 	}
 
 	cIdx := C.size_t(0)
 
-	/* The fido_assert_hmac_secret_ptr() function returns a pointer to the hmac-secret attribute of statement idx in assert. The HMAC Secret Extension (hmac-secret) is a CTAP 2.0 extension. Note that the resulting hmac-secret varies according to whether user verification was performed by the authenticator.
-	   - https://developers.yubico.com/libfido2/Manuals/fido_assert_largeblob_key_ptr.html */
+	/*
+		exact the hmac secret(s)
+		The fido_assert_hmac_secret_ptr() function returns a pointer to the hmac-secret attribute of statement idx in assert. The HMAC Secret Extension (hmac-secret) is a CTAP 2.0 extension. Note that the resulting hmac-secret varies according to whether user verification was performed by the authenticator.
+			   - https://developers.yubico.com/libfido2/Manuals/fido_assert_largeblob_key_ptr.html */
 	cHMACLen := C.fido_assert_hmac_secret_len(cAssert, cIdx)
 	cHMACPtr := C.fido_assert_hmac_secret_ptr(cAssert, cIdx)
 	hmacSecret := C.GoBytes(unsafe.Pointer(cHMACPtr), C.int(cHMACLen))
@@ -336,7 +338,6 @@ func (d *Device) AssertFido2Device(
 	cHMACPtrLarge := C.fido_assert_largeblob_key_ptr(cAssert, cIdx)
 	hmacSecretLarge := C.GoBytes(unsafe.Pointer(cHMACPtrLarge), C.int(cHMACLenLarge))
 
-	// TODO: if the larger hmac secret blobs make a difference, implement functionality to detect features
 	assertion := &Assertion{
 		HMACSecret:      hmacSecret,
 		HMACSecretLarge: hmacSecretLarge,
