@@ -144,10 +144,9 @@ type Extension string
 
 // FIDO2 assertions options that should be in the LUKS header because of systemd-cryptenroll
 type AssertionOpts struct {
-	Extensions []Extension
-	UV         OptionValue
-	UP         OptionValue
-	HMACSalt   []byte
+	UV       OptionValue
+	UP       OptionValue
+	HMACSalt []byte
 }
 
 type User struct {
