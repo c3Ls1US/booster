@@ -280,20 +280,24 @@ func (d *Device) AssertFido2Device(
 	if cErr := C.fido_assert_set_rp(cAssert, C.CString(rpID)); cErr != C.FIDO_OK {
 		return nil, fmt.Errorf("failed to set up assertion relying party id: %w", errFromCode(cErr))
 	}
+
 	// set the client data hash
 	if cErr := C.fido_assert_set_clientdata_hash(cAssert, getCBytes(clientDataHash), getCLen(clientDataHash)); cErr != C.FIDO_OK {
 		return nil, fmt.Errorf("failed to set client data hash: %w", errFromCode(cErr))
 	}
+
 	// set the credential id
 	if cErr := C.fido_assert_allow_cred(cAssert, getCBytes(credentialID), getCLen(credentialID)); cErr != C.FIDO_OK {
 		return nil, fmt.Errorf("failed to set allowed credentials: %w", errFromCode(cErr))
 	}
-	if exts := getExtensionsInt(opts.Extensions); exts > 0 {
-		if cErr := C.fido_assert_set_extensions(cAssert, C.int(exts)); cErr != C.FIDO_OK {
-			return nil, fmt.Errorf("failed to set extensions: %w", errFromCode(cErr))
-		}
+
 	// set the extension
+	ext := 0
+	ext |= int(C.FIDO_EXT_HMAC_SECRET)
+	if cErr := C.fido_assert_set_extensions(cAssert, C.int(ext)); cErr != C.FIDO_OK {
+		return nil, fmt.Errorf("failed to set extensions: %w", errFromCode(cErr))
 	}
+
 	// set the options
 	cUV, err := getCOpt(opts.UV)
 	if err != nil {
@@ -309,6 +313,7 @@ func (d *Device) AssertFido2Device(
 	if cErr := C.fido_assert_set_up(cAssert, cUP); cErr != C.FIDO_OK {
 		return nil, fmt.Errorf("failed to set UP option: %w", errFromCode(cErr))
 	}
+
 	// set the hmac salt
 	if opts.HMACSalt != nil {
 		if cErr := C.fido_assert_set_hmac_salt(cAssert, getCBytes(opts.HMACSalt), getCLen(opts.HMACSalt)); cErr != C.FIDO_OK {
@@ -325,6 +330,7 @@ func (d *Device) AssertFido2Device(
 
 	/*
 		exact the hmac secret(s)
+
 		The fido_assert_hmac_secret_ptr() function returns a pointer to the hmac-secret attribute of statement idx in assert. The HMAC Secret Extension (hmac-secret) is a CTAP 2.0 extension. Note that the resulting hmac-secret varies according to whether user verification was performed by the authenticator.
 			   - https://developers.yubico.com/libfido2/Manuals/fido_assert_largeblob_key_ptr.html */
 	cHMACLen := C.fido_assert_hmac_secret_len(cAssert, cIdx)
