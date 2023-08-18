@@ -256,7 +256,7 @@ func getCStringOrNil(s string) *C.char {
 func (d *Device) AssertFido2Device(
 	rpID string,
 	clientDataHash []byte,
-	credentialIDs [][]byte,
+	credentialID []byte,
 	pin string,
 	opts *AssertionOpts) (*Assertion, error) {
 
@@ -284,11 +284,9 @@ func (d *Device) AssertFido2Device(
 	if cErr := C.fido_assert_set_clientdata_hash(cAssert, getCBytes(clientDataHash), getCLen(clientDataHash)); cErr != C.FIDO_OK {
 		return nil, fmt.Errorf("failed to set client data hash: %w", errFromCode(cErr))
 	}
-	for _, credentialID := range credentialIDs {
-		if cErr := C.fido_assert_allow_cred(cAssert, getCBytes(credentialID), getCLen(credentialID)); cErr != C.FIDO_OK {
-			return nil, fmt.Errorf("failed to set allowed credentials: %w", errFromCode(cErr))
-		}
 	// set the credential id
+	if cErr := C.fido_assert_allow_cred(cAssert, getCBytes(credentialID), getCLen(credentialID)); cErr != C.FIDO_OK {
+		return nil, fmt.Errorf("failed to set allowed credentials: %w", errFromCode(cErr))
 	}
 	if exts := getExtensionsInt(opts.Extensions); exts > 0 {
 		if cErr := C.fido_assert_set_extensions(cAssert, C.int(exts)); cErr != C.FIDO_OK {
