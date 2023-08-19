@@ -253,7 +253,6 @@ func (d *Device) AssertFido2Device(
 	credentialID []byte,
 	pin string,
 	opts *AssertionOpts) (*Assertion, error) {
-
 	dev, err := d.openFido2Device()
 	if err != nil {
 		return nil, err
@@ -317,6 +316,8 @@ func (d *Device) AssertFido2Device(
 
 	// assert the device
 	if cErr := C.fido_dev_get_assert(dev, cAssert, getCStringOrNil(pin)); cErr != C.FIDO_OK {
+		// cancels all pending requests for the device
+		C.fido_dev_cancel(dev)
 		return nil, fmt.Errorf("failed to get assertion: %w", errFromCode(cErr))
 	}
 
