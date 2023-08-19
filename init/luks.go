@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
@@ -13,7 +12,6 @@ import (
 	"io/fs"
 	"net"
 	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 	"time"
