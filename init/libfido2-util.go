@@ -22,6 +22,7 @@ const (
 
 const (
 	HMACSecretExtension Extension = "hmac-secret"
+	// TODO: find out what this is used for and if we actually need it
 	CredProtectExtension Extension = "credProtect"
 )
 
