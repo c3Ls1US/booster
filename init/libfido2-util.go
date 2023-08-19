@@ -152,12 +152,6 @@ type AssertionOpts struct {
 	HMACSalt []byte
 }
 
-type User struct {
-	ID          []byte
-	Name        string
-	DisplayName string
-	Icon        string
-}
 
 type Assertion struct {
 	HMACSecret      []byte
