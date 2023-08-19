@@ -81,7 +81,8 @@ const (
 	ErrOther = "other error"
 )
 
-// function is called when setting inputs for fido2 assertions and a status code is returned
+// function is called when setting inputs during fido2 assertion
+// returns error messages associated with the status codes returned from C
 // these errors were documented by go-libfido2, but not all of them were
 // see https://github.com/Yubico/libfido2/blob/main/src/fido/err.h
 func errFromCode(code C.int) error {
@@ -163,10 +164,17 @@ type Device struct {
 	sync.Mutex
 }
 
-// initiliaze the library
-// TODO: lookup what exactly initializing the library does
+/*
+	initiliaze the library
+
+The fido_init() function initialises the libfido2 library. Its invocation must precede that of any other libfido2 function in the context of the executing thread.
+If FIDO_DEBUG is set in flags, then debug output will be emitted by libfido2 on stderr. Alternatively, the FIDO_DEBUG environment variable may be set.
+If FIDO_DISABLE_U2F_FALLBACK is set in flags, then libfido2 will not fallback to U2F in fido_dev_open(3) if a device claims to support FIDO2 but fails to respond to a CTAP 2.0 greeting.
+
+- https://developers.yubico.com/libfido2/Manuals/fido_init.html
+*/
 func Fido2Init() {
-	C.fido_init(0)
+	C.fido_init(0) // initiliaze the library without debugging
 }
 
 func NewFido2Device(path string) *Device {
@@ -188,7 +196,6 @@ func (d *Device) closeFido2Device(dev *C.fido_dev_t) {
 	d.Lock()
 	d.dev = nil
 	d.Unlock()
-	// TODO: should probably cancel if we fail
 	if cErr := C.fido_dev_close(dev); cErr != C.FIDO_OK {
 		info("failed to close hidraw device: ", errFromCode(cErr).Error())
 	}
@@ -237,6 +244,9 @@ func getCStringOrNil(s string) *C.char {
 	return C.CString(s)
 }
 
+// asserts the fido2 token then returns the hmac secret if successful
+// see the libfido2 manual for more information about various functions used
+// - https://developers.yubico.com/libfido2/Manuals/
 func (d *Device) AssertFido2Device(
 	rpID string,
 	clientDataHash []byte,
@@ -313,7 +323,7 @@ func (d *Device) AssertFido2Device(
 	cIdx := C.size_t(0)
 
 	// extract the hmac secret
-	// see https://developers.yubico.com/libfido2/Manuals/fido_assert_largeblob_key_ptr.html
+	// - https://developers.yubico.com/libfido2/Manuals/fido_assert_largeblob_key_ptr.html
 	cHMACLen := C.fido_assert_hmac_secret_len(cAssert, cIdx)
 	cHMACPtr := C.fido_assert_hmac_secret_ptr(cAssert, cIdx)
 	hmacSecret := C.GoBytes(unsafe.Pointer(cHMACPtr), C.int(cHMACLen))
