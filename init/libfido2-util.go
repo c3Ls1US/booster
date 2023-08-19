@@ -21,7 +21,7 @@ const (
 )
 
 const (
-	HMACSecretExtension  Extension = "hmac-secret"
+	HMACSecretExtension Extension = "hmac-secret"
 	CredProtectExtension Extension = "credProtect"
 )
 
