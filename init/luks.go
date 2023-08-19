@@ -123,102 +123,14 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 		// UV:         False,
 		UP:         True,
 	})
-	if err != nil {
-		return nil, err
-	}
-	if assert.HMACSecret != nil {
-		// just print the hash for comparison
-		str := base64.StdEncoding.EncodeToString(assert.HMACSecret)
-		sum := sha256.Sum256([]byte(str))
-		info("used libfido2 to retrieve hmac secret for %s", devName)
-		info("sha256: %x", sum)
-	}
 
-	var challenge strings.Builder
-	const zeroString = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" // 32byte zero string encoded as hex, hex.EncodeToString(make([]byte, 32))
-	challenge.WriteString(zeroString)                                 // client data, an empty string
-	challenge.WriteRune('\n')
-	challenge.WriteString(relyingParty)
-	challenge.WriteRune('\n')
-	challenge.WriteString(credential)
-	challenge.WriteRune('\n')
-	challenge.WriteString(salt)
-	challenge.WriteRune('\n')
-
-	device := "/dev/" + devName
-	args := []string{"-G", "-h", device}
-	if userPresenceRequired {
-		args = append(args, "-t", "up=true")
-	}
-	if userVerificationRequired {
-		args = append(args, "-t", "uv=true")
-	}
-	if pinRequired {
-		args = append(args, "-t", "pin=true")
-	}
-
-	info("running fido2-assert tool for %s", devName)
-	cmd := exec.Command("fido2-assert", args...)
-	pipeOut, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	pipeErr, err := cmd.StderrPipe()
-	if err != nil {
-		return nil, err
-	}
-	pipeIn, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
 	}
 
-	if err := cmd.Start(); err != nil {
-		return nil, err
-	}
+	hmacSecret := []byte(base64.StdEncoding.EncodeToString(assert.HMACSecret))
 
-	if _, err := pipeIn.Write([]byte(challenge.String())); err != nil {
-		return nil, err
-	}
-
-	if pinRequired {
-		// wait till the command requests the pin
-		buff := make([]byte, 500)
-		if _, err := pipeErr.Read(buff); err != nil {
-			return nil, err
-		}
-		// Dealing with Yubikey using command-line tools is getting out of control
-		// TODO: find a way to do the same using libfido2
-		prompt := "Enter PIN for " + device + ":"
-		if strings.HasPrefix(string(buff), prompt) {
-			// fido2-assert tool requests for PIN
-			pin, err := readPassword(prompt, "")
-			if err != nil {
-				return nil, err
-			}
-			pin = append(pin, '\n')
-			if _, err := pipeIn.Write(pin); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	content, err := io.ReadAll(pipeOut)
-	if err != nil {
-		return nil, err
-	}
-	lines := bytes.Split(content, []byte{'\n'})
-	if len(lines) < 5 {
-		msg, _ := io.ReadAll(pipeErr)
-		msg = bytes.TrimRight(msg, "\n")
-		return nil, fmt.Errorf("%s", string(msg))
-	}
-
-	info("used fido2-assert to retrieve hmac secret for %s", devName)
-	sum := sha256.Sum256(lines[4])
-	info("sha256: %x", sum)
-
-	// hmac is the 5th line in the output
-	return lines[4], nil
+	return hmacSecret, nil
 }
 
 var hidrawDevices = make(chan string, 10) // channel that receives 'add hidraw' events
