@@ -21,12 +21,6 @@ const (
 )
 
 const (
-	HMACSecretExtension Extension = "hmac-secret"
-	// TODO: find out what this is used for and if we actually need it
-	CredProtectExtension Extension = "credProtect"
-)
-
-const (
 	// ErrInvalidArgument if arguments are invalid.
 	ErrInvalidArgument = "invalid argument"
 	// ErrUserPresenceRequired is user presence required.
@@ -143,8 +137,6 @@ func errFromCode(code C.int) error {
 }
 
 type OptionValue string
-
-type Extension string
 
 // fido2 assertions options that should be in the LUKS header because of systemd-cryptenroll
 type AssertionOpts struct {
