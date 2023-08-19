@@ -80,8 +80,10 @@ const (
 	ErrOther = "other error"
 )
 
+// function is called when setting inputs for fido2 assertions and a status code is returned
+// these errors were documented by go-libfido2, but not all of them were
+// see https://github.com/Yubico/libfido2/blob/main/src/fido/err.h
 func errFromCode(code C.int) error {
-	// see https://github.com/Yubico/libfido2/blob/main/src/fido/err.h
 	switch code {
 	case C.FIDO_ERR_TX: // -1
 		return fmt.Errorf(ErrTX)
@@ -142,7 +144,7 @@ type OptionValue string
 
 type Extension string
 
-// FIDO2 assertions options that should be in the LUKS header because of systemd-cryptenroll
+// fido2 assertions options that should be in the LUKS header because of systemd-cryptenroll
 type AssertionOpts struct {
 	UV       OptionValue
 	UP       OptionValue
@@ -161,14 +163,15 @@ type Assertion struct {
 	HMACSecretLarge []byte
 }
 
-// FIDO2 Device
+// fido2 Device
 type Device struct {
 	path string
 	dev  *C.fido_dev_t
 	sync.Mutex
 }
 
-// Initiliaze the library
+// initiliaze the library
+// TODO: lookup what exactly initializing the library does
 func Fido2Init() {
 	C.fido_init(0)
 }
@@ -192,13 +195,14 @@ func (d *Device) closeFido2Device(dev *C.fido_dev_t) {
 	d.Lock()
 	d.dev = nil
 	d.Unlock()
+	// TODO: should probably cancel if we fail
 	if cErr := C.fido_dev_close(dev); cErr != C.FIDO_OK {
 		info("failed to close hidraw device: ", errFromCode(cErr).Error())
 	}
 	C.fido_dev_free(&dev)
 }
 
-// checks by opening and closing the device
+// simply checks for fido2 by opening and closing the device
 func (d *Device) IsFido2() (bool, error) {
 	dev, err := d.openFido2Device()
 	if err != nil {
@@ -209,6 +213,7 @@ func (d *Device) IsFido2() (bool, error) {
 	return isFido2, nil
 }
 
+// retrieves the c value associated with the fido2 assertion option
 func getCOpt(o OptionValue) (C.fido_opt_t, error) {
 	switch o {
 	case Default:
@@ -243,7 +248,7 @@ func getExtensionsInt(extensions []Extension) int {
 	return exts
 }
 
-// expects the FIDO2 pin
+// expects the fido2 pin
 // nil means a pin is not required
 func getCStringOrNil(s string) *C.char {
 	if s == "" {
@@ -327,16 +332,12 @@ func (d *Device) AssertFido2Device(
 
 	cIdx := C.size_t(0)
 
-	/*
-		exact the hmac secret(s)
-
-		The fido_assert_hmac_secret_ptr() function returns a pointer to the hmac-secret attribute of statement idx in assert. The HMAC Secret Extension (hmac-secret) is a CTAP 2.0 extension. Note that the resulting hmac-secret varies according to whether user verification was performed by the authenticator.
-			   - https://developers.yubico.com/libfido2/Manuals/fido_assert_largeblob_key_ptr.html */
+	// extract the hmac secret
+	// see https://developers.yubico.com/libfido2/Manuals/fido_assert_largeblob_key_ptr.html
 	cHMACLen := C.fido_assert_hmac_secret_len(cAssert, cIdx)
 	cHMACPtr := C.fido_assert_hmac_secret_ptr(cAssert, cIdx)
 	hmacSecret := C.GoBytes(unsafe.Pointer(cHMACPtr), C.int(cHMACLen))
 
-	/* 	 The fido_assert_blob_ptr() and fido_assert_largeblob_key_ptr() functions return pointers to the “credBlob” and “largeBlobKey” attributes of statement idx in assert. Credential Blob (credBlob) and Large Blob Key (largeBlobKey) are CTAP 2.1 extensions. */
 	cHMACLenLarge := C.fido_assert_largeblob_key_len(cAssert, cIdx)
 	cHMACPtrLarge := C.fido_assert_largeblob_key_ptr(cAssert, cIdx)
 	hmacSecretLarge := C.GoBytes(unsafe.Pointer(cHMACPtrLarge), C.int(cHMACLenLarge))
