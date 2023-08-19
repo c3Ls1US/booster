@@ -152,10 +152,8 @@ type AssertionOpts struct {
 	HMACSalt []byte
 }
 
-
 type Assertion struct {
-	HMACSecret      []byte
-	HMACSecretLarge []byte
+	HMACSecret []byte
 }
 
 // fido2 Device
@@ -229,7 +227,6 @@ func getCLen(b []byte) C.size_t {
 func getCBytes(b []byte) *C.uchar {
 	return (*C.uchar)(unsafe.Pointer(&b[0]))
 }
-
 
 // expects the fido2 pin
 // nil means a pin is not required
@@ -321,13 +318,8 @@ func (d *Device) AssertFido2Device(
 	cHMACPtr := C.fido_assert_hmac_secret_ptr(cAssert, cIdx)
 	hmacSecret := C.GoBytes(unsafe.Pointer(cHMACPtr), C.int(cHMACLen))
 
-	cHMACLenLarge := C.fido_assert_largeblob_key_len(cAssert, cIdx)
-	cHMACPtrLarge := C.fido_assert_largeblob_key_ptr(cAssert, cIdx)
-	hmacSecretLarge := C.GoBytes(unsafe.Pointer(cHMACPtrLarge), C.int(cHMACLenLarge))
-
 	assertion := &Assertion{
-		HMACSecret:      hmacSecret,
-		HMACSecretLarge: hmacSecretLarge,
+		HMACSecret: hmacSecret,
 	}
 	return assertion, nil
 }
