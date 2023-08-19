@@ -230,18 +230,6 @@ func getCBytes(b []byte) *C.uchar {
 	return (*C.uchar)(unsafe.Pointer(&b[0]))
 }
 
-func getExtensionsInt(extensions []Extension) int {
-	exts := 0
-	for _, extension := range extensions {
-		switch extension {
-		case HMACSecretExtension:
-			exts |= int(C.FIDO_EXT_HMAC_SECRET)
-		case CredProtectExtension:
-			exts |= int(C.FIDO_EXT_CRED_PROTECT)
-		}
-	}
-	return exts
-}
 
 // expects the fido2 pin
 // nil means a pin is not required
