@@ -114,13 +114,28 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 		return nil, fmt.Errorf("failed when decoding hmac salt")
 	}
 
+	assertOpts := &AssertionOpts{
+		HMACSalt: hmacSalt,
+	}
+
+	if userPresenceRequired {
+		assertOpts.UP = True
+	}
+
+	pin := ""
+	// UV implies pin
+	if userVerificationRequired || pinRequired {
+		assertOpts.UV = True
+		prompt := "Enter PIN for " + devName + ":"
+		p, err := readPassword(prompt, "")
+		if err != nil {
+			return nil, err
+		}
+		pin = string(p)
+	}
+
 	// TODO: handle the case with pins
-	assert, err := dev.AssertFido2Device(relyingParty, cdh, cred, "", &AssertionOpts{
-		HMACSalt:   hmacSalt,
-		// if pin is required, set to true. otherwise, don't set to false 
-		// UV:         False,
-		UP:         True,
-	})
+	assert, err := dev.AssertFido2Device(relyingParty, cdh, cred, pin, assertOpts)
 
 	if err != nil {
 		return nil, err
