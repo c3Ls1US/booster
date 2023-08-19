@@ -189,6 +189,7 @@ func (d *Device) openFido2Device() (*C.fido_dev_t, error) {
 		return nil, fmt.Errorf("failed to open hidraw device: %w", errFromCode(cErr))
 	}
 	d.dev = dev
+
 	return dev, nil
 }
 
@@ -210,6 +211,7 @@ func (d *Device) IsFido2() (bool, error) {
 	}
 	defer d.closeFido2Device(dev)
 	isFido2 := bool(C.fido_dev_is_fido2(dev))
+
 	return isFido2, nil
 }
 
@@ -241,6 +243,7 @@ func getCStringOrNil(s string) *C.char {
 	if s == "" {
 		return nil
 	}
+
 	return C.CString(s)
 }
 
@@ -332,5 +335,6 @@ func (d *Device) AssertFido2Device(
 	assertion := &Assertion{
 		HMACSecret: hmacSecret,
 	}
+
 	return assertion, nil
 }
