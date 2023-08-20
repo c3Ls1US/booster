@@ -125,7 +125,7 @@ func handleUdevEvent(ev netlink.UEvent) {
 			// /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0003:1050:0402.0005/hidraw/hidraw1
 			case seenHidrawDevices <- ev.Env["DEVPATH"]:
 			default:
-				info("did not send hidraw on add because channel is full")
+				return
 			}
 		}()
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
@@ -145,7 +145,7 @@ func handleUsbBindUevent(ev netlink.UEvent) {
 				select {
 				case hidrawDevices <- dev[idx+1:]:
 				default:
-					info("did not send hidraw on bound because channel is full")
+					return
 				}
 			}
 		}
