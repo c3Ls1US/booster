@@ -218,7 +218,7 @@ func (d *Device) assertFido2Device(
 	// pin
 	var cPin *C.char = nil
 	if pin != "" {
-		cPin := C.CString(pin)
+		cPin = C.CString(pin)
 		defer C.free(unsafe.Pointer(cPin))
 	}
 
