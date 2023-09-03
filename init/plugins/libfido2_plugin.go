@@ -216,6 +216,7 @@ func (d *Device) assertFido2Device(
 	}
 
 	// pin
+	// nil means a pin is not required
 	var cPin *C.char = nil
 	if pin != "" {
 		cPin = C.CString(pin)
@@ -236,9 +237,7 @@ func (d *Device) assertFido2Device(
 	cHMACPtr := C.fido_assert_hmac_secret_ptr(cAssert, cIdx)
 	hmacSecret := C.GoBytes(unsafe.Pointer(cHMACPtr), C.int(cHMACLen))
 
-	assertion := &Assertion{HMACSecret: hmacSecret}
-
-	return assertion, nil
+	return &Assertion{HMACSecret: hmacSecret}, nil
 }
 
 func GetFido2HMACSecret(
