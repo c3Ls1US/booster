@@ -117,7 +117,7 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 
 	pin := ""
 	if pinRequired {
-		prompt := "Attempting to recover FIDO2 password\nEnter PIN for " + devName + ":"
+		prompt := "Attempting to recover FIDO2 password...\nEnter PIN for " + devName + ":"
 		p, err := readPassword(prompt, "")
 		if err != nil {
 			return nil, err
