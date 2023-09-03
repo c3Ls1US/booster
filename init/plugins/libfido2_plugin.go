@@ -224,7 +224,7 @@ func (d *Device) assertFido2Device(
 	}
 
 	// assert the device
-	ch <- "Please confirm presence or verify FIDO2 token:"
+	ch <- "Please confirm user presence or verify " + d.path + ":"
 	if cErr := C.fido_dev_get_assert(dev, cAssert, cPin); cErr != C.FIDO_OK {
 		ch <- "Failed to get assertion for " + d.path
 		// cancels all pending requests for the device
