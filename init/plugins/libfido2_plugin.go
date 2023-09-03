@@ -151,7 +151,7 @@ func (d *Device) assertFido2Device(
 	clientDataHash []byte,
 	credentialID []byte,
 	pin string,
-	opts *AssertionOpts) (*Assertion, error) {
+	opts *AssertionOpts, ch chan string) (*Assertion, error) {
 	dev, err := d.openFido2Device()
 	if err != nil {
 		return nil, err
@@ -224,7 +224,9 @@ func (d *Device) assertFido2Device(
 	}
 
 	// assert the device
+	ch <- "Please confirm or verify FIDO2 token"
 	if cErr := C.fido_dev_get_assert(dev, cAssert, cPin); cErr != C.FIDO_OK {
+		ch <- "Failed to assert FIDO2 token"
 		// cancels all pending requests for the device
 		C.fido_dev_cancel(dev)
 		return nil, fmt.Errorf("failed to get assertion: %w", libfido2Errors[cErr])
@@ -248,7 +250,8 @@ func GetFido2HMACSecret(
 	pin string,
 	hmacSalt []byte,
 	userPresenceRequired bool,
-	userVerificationRequired bool) ([]byte, error) {
+	userVerificationRequired bool,
+	ch chan string) ([]byte, error) {
 	dev := newFido2Device("/dev/" + devName)
 
 	isFido2, err := dev.isFido2()
@@ -273,7 +276,7 @@ func GetFido2HMACSecret(
 		assertOpts.UV = True
 	}
 
-	assert, err := dev.assertFido2Device(rpID, clientDataHash, credentialID, pin, assertOpts)
+	assert, err := dev.assertFido2Device(rpID, clientDataHash, credentialID, pin, assertOpts, ch)
 	if err != nil {
 		return nil, err
 	}
