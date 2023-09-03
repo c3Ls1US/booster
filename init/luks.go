@@ -129,7 +129,7 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
 	ch := make(chan string)
 	go func() {
 		for msg := range ch {
-			console(msg)
+			console("\n" + msg)
 		}
 	}()
 
