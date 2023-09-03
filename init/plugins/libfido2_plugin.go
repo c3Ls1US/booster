@@ -232,6 +232,13 @@ func (d *Device) assertFido2Device(
 		return nil, fmt.Errorf("failed to get assertion: %w", libfido2Errors[cErr])
 	}
 
+	if opts.UP == True {
+		ch <- "User presence confirmed"
+	}
+	if opts.UV == True {
+		ch <- "User verification confirmed"
+	}
+
 	cIdx := C.size_t(0)
 
 	// extract the hmac secret
