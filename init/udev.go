@@ -72,8 +72,15 @@ var (
 )
 
 func udevListener() error {
-	// Initialize tpmReadyWg
-	tpmReadyWg.Add(1)
+	open, err := isTPMOpen()
+	if err != nil {
+		info("tpm not available: %s", err)
+		tpmReadyWg.Add(1)
+	}
+	if open {
+		info("tpm available")
+		tpmReady.Do(tpmReadyWg.Done)
+	}
 
 	udevConn = new(netlink.UEventConn)
 	if err := udevConn.Connect(netlink.KernelEvent); err != nil {
@@ -105,7 +112,6 @@ exit:
 }
 
 var seenHidrawDevices = make(chan string, 10)
-var seenTPM = make(chan struct{})
 
 func handleUdevEvent(ev netlink.UEvent) {
 	debug("udev event %+v", ev)
@@ -130,13 +136,6 @@ func handleUdevEvent(ev netlink.UEvent) {
 	} else if ev.Env["SUBSYSTEM"] == "tpmrm" && ev.Action == "add" {
 		go handleTpmReadyUevent(ev)
 	}
-
-	select {
-	case <-seenTPM:
-		return
-	default:
-		go checkTPMOpen(ev)
-	}
 }
 
 func handleTpmReadyUevent(ev netlink.UEvent) {
@@ -145,14 +144,13 @@ func handleTpmReadyUevent(ev netlink.UEvent) {
 }
 
 // check if the TPM can be opened
-func checkTPMOpen(ev netlink.UEvent) {
+func isTPMOpen() (bool, error) {
 	dev, err := openTPM()
+	defer dev.Close()
 	if err != nil {
-		return
+		return false, err
 	}
-	dev.Close()
-	handleTpmReadyUevent(ev)
-	seenTPM <- struct{}{}
+	return true, nil
 }
 
 // filters hidraw devices by device path that were previously added
