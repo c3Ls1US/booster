@@ -72,10 +72,10 @@ var (
 )
 
 func udevListener() error {
+	tpmReadyWg.Add(1)
 	open, err := isTPMOpen()
 	if err != nil {
 		info("tpm not available: %s", err)
-		tpmReadyWg.Add(1)
 	}
 	if open {
 		info("tpm available")
