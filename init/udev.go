@@ -119,11 +119,9 @@ func handleUdevEvent(ev netlink.UEvent) {
 	} else if ev.Env["SUBSYSTEM"] == "net" {
 		go func() { check(handleNetworkUevent(ev)) }()
 	} else if ev.Env["SUBSYSTEM"] == "hidraw" && ev.Action == "add" {
-		// add the hidraw to a channel to be filtered after it has been added
 		go func() {
 			select {
-			// /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0003:1050:0402.0005/hidraw/hidraw1
-			case seenHidrawDevices <- ev.Env["DEVPATH"]:
+			case seenHidrawDevices <- ev.Env["DEVPATH"]: // /devices/pci0000:00/0000:00:08.1/0000:03:00.3/usb1/1-1/1-1:1.0/0003:1050:0402.0005/hidraw/hidraw1
 			default:
 				return
 			}
