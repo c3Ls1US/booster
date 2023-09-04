@@ -192,6 +192,8 @@ func recoverSystemdFido2Password(t luks.Token) ([]byte, error) {
 }
 
 func recoverSystemdTPM2Password(t luks.Token) ([]byte, error) {
+	tpmReadyWg.Wait()
+
 	var node struct {
 		Blob       string `json:"tpm2-blob"` // base64
 		PCRs       []int  `json:"tpm2-pcrs"`
