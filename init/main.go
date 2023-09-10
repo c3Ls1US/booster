@@ -670,7 +670,7 @@ func switchRoot() error {
 	}
 	if isSystemdInit {
 		// pass serialized state to userspace, this way we can export for example initrd execution time
-		fd, err := unix.MemfdCreate("systemd-state", 0)
+		fd, err := unix.MemfdCreate("systemd-state", unix.MFD_EXEC)
 		if err != nil {
 			return fmt.Errorf("memfd create: %v", err)
 		}
