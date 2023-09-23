@@ -59,13 +59,13 @@ func tpmAwaitReady() bool {
 }
 
 func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyHash, password []byte) ([]byte, error) {
-
 	dev, err := openTPM()
 	if err != nil {
 		return nil, err
 	}
 	defer dev.Close()
 
+	// TODO: the digest may need to be verified
 	sessHandle, _, err := policyPCRSession(dev, pcrs, bank, policyHash, password != nil)
 	if err != nil {
 		return nil, err
@@ -95,6 +95,7 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	}
 	defer tpm2.FlushContext(dev, srkHandle)
 
+	// TODO: in addition to the srkHandle these public/private parts can be completely wrong as well
 	objectHandle, _, err := tpm2.Load(dev, srkHandle, "", public, private)
 	if err != nil {
 		return nil, fmt.Errorf("clevis.go/tpm2: unable to load data: %v", err)

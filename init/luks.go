@@ -273,6 +273,7 @@ func recoverSystemdTPM2Password(t luks.Token) ([]byte, error) {
 		return nil, err
 	}
 
+	// TODO: verify if the PCRBank needs to be unmasked because systemd may be storing the masked ones
 	bank := parsePCRBank(node.PCRBank)
 
 	var authValue []byte
