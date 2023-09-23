@@ -139,7 +139,7 @@ func policyPCRSession(dev io.ReadWriteCloser, pcrs []int, algo tpm2.Algorithm, e
 		dev,
 		/*tpmkey=*/ tpm2.HandleNull,
 		/*bindkey=*/ tpm2.HandleNull,
-		/*nonceCaller=*/ make([]byte, 32),
+		/*nonceCaller=*/ make([]byte, 16),
 		/*encryptedSalt=*/ nil,
 		/*sessionType=*/ tpm2.SessionPolicy,
 		/*symmetric=*/ tpm2.AlgNull,
