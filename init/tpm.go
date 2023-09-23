@@ -72,13 +72,21 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	}
 	defer tpm2.FlushContext(dev, sessHandle)
 
+	// default srk template
 	srkTemplate := tpm2.Public{
-		Type:          tpm2.AlgECC,
-		NameAlg:       tpm2.AlgSHA256,
-		Attributes:    tpm2.FlagStorageDefault,
-		AuthPolicy:    nil,
-		ECCParameters: defaultECCParams,
-		RSAParameters: defaultRSAParams,
+		Type:       tpm2.AlgRSA,
+		NameAlg:    tpm2.AlgSHA256,
+		Attributes: tpm2.FlagFixedTPM | tpm2.FlagFixedParent | tpm2.FlagSensitiveDataOrigin | tpm2.FlagUserWithAuth | tpm2.FlagRestricted | tpm2.FlagDecrypt | tpm2.FlagNoDA,
+		AuthPolicy: nil,
+		RSAParameters: &tpm2.RSAParams{
+			Symmetric: &tpm2.SymScheme{
+				Alg:     tpm2.AlgAES,
+				KeyBits: 128,
+				Mode:    tpm2.AlgCFB,
+			},
+			KeyBits:    2048,
+			ModulusRaw: make([]byte, 256),
+		},
 	}
 
 	srkHandle, _, err := tpm2.CreatePrimary(dev, tpm2.HandleOwner, tpm2.PCRSelection{}, "", "", srkTemplate)
