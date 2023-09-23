@@ -107,7 +107,6 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 		return nil, fmt.Errorf("tpm2: failed when computing hash for buffer")
 	}
 
-	unsealed, err := tpm2.UnsealWithSession(dev, sessHandle, objectHandle, string(digest))
 	passwordHash := sha256.Sum256(password)
 	unsealed, err := tpm2.UnsealWithSession(dev, sessHandle, objectHandle, string(passwordHash[:]))
 	if err != nil {
