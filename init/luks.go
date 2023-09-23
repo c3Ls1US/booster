@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
@@ -283,9 +282,7 @@ func recoverSystemdTPM2Password(t luks.Token) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		hash := sha256.Sum256(pin)
-		authValue = hash[:]
+		authValue = pin
 	}
 
 	password, err := tpm2Unseal(public, private, node.PCRs, bank, policyHash, authValue)
