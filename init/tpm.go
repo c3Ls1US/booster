@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"net"
@@ -102,20 +103,13 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	}
 	defer tpm2.FlushContext(dev, objectHandle)
 
-	// before passing in the PIN, compute the hash then stringify
-	// TODO: research an appropriate buffer size
-	var buffer tpmutil.U16Bytes
-	in := bytes.NewBuffer(password)
-	if err := buffer.TPMUnmarshal(in); err != nil {
-		return nil, fmt.Errorf("tpmutil: failed when unmarshalling buffer")
-	}
-	// assuming the digest is already truncated
-	digest, _, err := tpm2.Hash(dev, bank, buffer, objectHandle)
 	if err != nil {
 		return nil, fmt.Errorf("tpm2: failed when computing hash for buffer")
 	}
 
 	unsealed, err := tpm2.UnsealWithSession(dev, sessHandle, objectHandle, string(digest))
+	passwordHash := sha256.Sum256(password)
+	unsealed, err := tpm2.UnsealWithSession(dev, sessHandle, objectHandle, string(passwordHash[:]))
 	if err != nil {
 		return nil, fmt.Errorf("unable to unseal data: %v", err)
 	}
