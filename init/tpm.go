@@ -143,7 +143,7 @@ func policyPCRSession(dev io.ReadWriteCloser, pcrs []int, algo tpm2.Algorithm, e
 		/*nonceCaller=*/ make([]byte, 32),
 		/*encryptedSalt=*/ nil,
 		/*sessionType=*/ tpm2.SessionPolicy,
-		/*symmetric=*/ tpm2.AlgNull,
+		/*symmetric=*/ tpm2.AlgAES,
 		/*authHash=*/ tpm2.AlgSHA256)
 	if err != nil {
 		return tpm2.HandleNull, nil, fmt.Errorf("unable to start session: %v", err)
