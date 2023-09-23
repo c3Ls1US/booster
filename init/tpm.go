@@ -59,7 +59,6 @@ func tpmAwaitReady() bool {
 }
 
 func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyHash, password []byte) ([]byte, error) {
-	tpmAwaitReady()
 
 	dev, err := openTPM()
 	if err != nil {
