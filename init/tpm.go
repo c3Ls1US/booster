@@ -105,6 +105,7 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	if err != nil {
 		return nil, fmt.Errorf("unable to unseal data: %v", err)
 	}
+	console("Recovered unsealed data from tpm")
 
 	return unsealed, nil
 }
