@@ -66,7 +66,6 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	}
 	defer dev.Close()
 
-	// TODO: the digest may need to be verified
 	sessHandle, _, err := policyPCRSession(dev, pcrs, bank, policyHash, password != nil)
 	if err != nil {
 		return nil, err
@@ -96,18 +95,11 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	}
 	defer tpm2.FlushContext(dev, srkHandle)
 
-	// load the tpm using systemd's authorization session
-	auth := tpm2.AuthCommand{Session: tpm2.HandlePasswordSession, Attributes: tpm2.AttrContinueSession | tpm2.AttrEcrypt | tpm2.AttrDecrypt, Auth: []byte("")}
-	// TODO: in addition to the srkHandle these public/private parts can be completely wrong as well
-	objectHandle, _, err := tpm2.LoadUsingAuth(dev, srkHandle, auth, public, private)
+	objectHandle, _, err := tpm2.Load(dev, srkHandle, "", public, private)
 	if err != nil {
 		return nil, fmt.Errorf("clevis.go/tpm2: unable to load data: %v", err)
 	}
 	defer tpm2.FlushContext(dev, objectHandle)
-
-	if err != nil {
-		return nil, fmt.Errorf("tpm2: failed when computing hash for buffer")
-	}
 
 	passwordHash := sha256.Sum256(password)
 	unsealed, err := tpm2.UnsealWithSession(dev, sessHandle, objectHandle, string(passwordHash[:]))
