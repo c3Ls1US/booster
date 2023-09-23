@@ -102,7 +102,17 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	}
 	defer tpm2.FlushContext(dev, objectHandle)
 
-	unsealed, err := tpm2.UnsealWithSession(dev, sessHandle, objectHandle, string(password))
+	var buffer tpmutil.U16Bytes
+	in := bytes.NewBuffer(password)
+	if err := buffer.TPMUnmarshal(in); err != nil {
+		return nil, fmt.Errorf("tpmutil: failed when unmarshalling buffer")
+	}
+	digest, _, err := tpm2.Hash(dev, bank, buffer, objectHandle)
+	if err != nil {
+		return nil, fmt.Errorf("tpm2: failed when computing hash for buffer")
+	}
+
+	unsealed, err := tpm2.UnsealWithSession(dev, sessHandle, objectHandle, string(digest))
 	if err != nil {
 		return nil, fmt.Errorf("unable to unseal data: %v", err)
 	}
