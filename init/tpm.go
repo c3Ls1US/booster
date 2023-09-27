@@ -181,10 +181,8 @@ func policyPCRSession(dev io.ReadWriteCloser, pcrs []int, algo tpm2.Algorithm, e
 	}
 
 	// An empty expected digest means that digest verification is skipped.
-	if len(pcrs) > 0 {
-		if err := tpm2.PolicyPCR(dev, sessHandle, nil, pcrSelection); err != nil {
-			return tpm2.HandleNull, nil, fmt.Errorf("unable to bind PCRs to auth policy: %v", err)
-		}
+	if err := tpm2.PolicyPCR(dev, sessHandle, nil, pcrSelection); err != nil {
+		return tpm2.HandleNull, nil, fmt.Errorf("unable to bind PCRs to auth policy: %v", err)
 	}
 
 	if usePassword {
