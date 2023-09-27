@@ -91,27 +91,15 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	}
 	defer dev.Close()
 
-	// create the SRK template or use the existing one
-	var srkHandle tpmutil.Handle
-	if srk != nil {
-		// if the systemd_srk exists in the LUKS header then use that one
-		handle, _, err := tpm2.CreatePrimaryRawTemplate(dev, tpm2.HandleOwner, tpm2.PCRSelection{}, "", "", srk)
-		if err != nil {
-			return nil, err
-		}
-		srkHandle = handle
-	} else {
-		// otherwise create an rsa or ecc template depending on the value of systemd-primary-alg
-		// currently systemd uses two SRK templates as inputs: ECC and an RSA template
-		srkTemplate, err := getSRKTemplate(encryptAlg)
-		if err != nil {
-			return nil, err
-		}
-		handle, _, err := tpm2.CreatePrimary(dev, tpm2.HandleOwner, tpm2.PCRSelection{}, "", "", srkTemplate)
-		if err != nil {
-			return nil, fmt.Errorf("clevis.go/tpm2: can't create primary key: %v", err)
-		}
-		srkHandle = handle
+	// create an rsa or ecc template depending on the value of systemd-primary-alg
+	// currently systemd uses two SRK templates as inputs: ECC and an RSA template
+	srkTemplate, err := getSRKTemplate(encryptAlg)
+	if err != nil {
+		return nil, err
+	}
+	srkHandle, _, err := tpm2.CreatePrimary(dev, tpm2.HandleOwner, tpm2.PCRSelection{}, "", "", srkTemplate)
+	if err != nil {
+		return nil, fmt.Errorf("clevis.go/tpm2: can't create primary key: %v", err)
 	}
 	defer tpm2.FlushContext(dev, srkHandle)
 
