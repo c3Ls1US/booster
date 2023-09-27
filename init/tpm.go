@@ -103,19 +103,19 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	}
 	defer tpm2.FlushContext(dev, srkHandle)
 
-	// load public/private data into tpm
-	objectHandle, _, err := tpm2.Load(dev, srkHandle, "", public, private)
-	if err != nil {
-		return nil, fmt.Errorf("clevis.go/tpm2: unable to load data: %v", err)
-	}
-	defer tpm2.FlushContext(dev, objectHandle)
-
 	// create the session, which is unencrypted
 	sessHandle, _, err := policyPCRSession(dev, pcrs, bank, policyHash, password != nil)
 	if err != nil {
 		return nil, err
 	}
 	defer tpm2.FlushContext(dev, sessHandle)
+
+	// load public/private data into tpm
+	objectHandle, _, err := tpm2.Load(dev, srkHandle, "", public, private)
+	if err != nil {
+		return nil, fmt.Errorf("clevis.go/tpm2: unable to load data: %v", err)
+	}
+	defer tpm2.FlushContext(dev, objectHandle)
 
 	// generate the hmac sha256
 	// systemd's iteration count is 10000
