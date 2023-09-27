@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/google/go-tpm/legacy/tpm2"
 	"github.com/google/go-tpm/tpmutil"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 var defaultSymScheme = &tpm2.SymScheme{
@@ -59,10 +61,6 @@ func tpmAwaitReady() bool {
 	return !timedOut
 }
 
-func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyHash, password []byte) ([]byte, error) {
-	dev, err := openTPM()
-	if err != nil {
-		return nil, err
 func getSRKTemplate(encryptAlg string) (tpm2.Public, error) {
 	switch encryptAlg {
 	case "rsa":
@@ -83,15 +81,15 @@ func getSRKTemplate(encryptAlg string) (tpm2.Public, error) {
 	default:
 		return tpm2.Public{}, fmt.Errorf("failed getting srk template because encryption algorithm is not ecc/rsa")
 	}
-	defer dev.Close()
 }
 
-	sessHandle, _, err := policyPCRSession(dev, pcrs, bank, policyHash, password != nil)
+func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyHash, password []byte, encryptAlg string, srk []byte, salt []byte) ([]byte, error) {
+	// open the tpm
+	dev, err := openTPM()
 	if err != nil {
 		return nil, err
 	}
-	defer tpm2.FlushContext(dev, sessHandle)
-
+	defer dev.Close()
 
 	// create the SRK template or use the existing one
 	var srkHandle tpmutil.Handle
@@ -117,14 +115,27 @@ func getSRKTemplate(encryptAlg string) (tpm2.Public, error) {
 	}
 	defer tpm2.FlushContext(dev, srkHandle)
 
+	// load public/private data into tpm
 	objectHandle, _, err := tpm2.Load(dev, srkHandle, "", public, private)
 	if err != nil {
 		return nil, fmt.Errorf("clevis.go/tpm2: unable to load data: %v", err)
 	}
 	defer tpm2.FlushContext(dev, objectHandle)
 
-	passwordHash := sha256.Sum256(password)
-	unsealed, err := tpm2.UnsealWithSession(dev, sessHandle, objectHandle, string(passwordHash[:]))
+	// create the session, which is unencrypted
+	sessHandle, _, err := policyPCRSession(dev, pcrs, bank, policyHash, password != nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tpm2.FlushContext(dev, sessHandle)
+
+	// generate the hmac sha256
+	// systemd's iteration count is 10000
+	const PBKDF2_HMAC_SHA256_ITERATIONS = 10000
+	hmac := pbkdf2.Key(password, salt, PBKDF2_HMAC_SHA256_ITERATIONS, 32, sha256.New)
+
+	// unseal the data with the current unencrypted session
+	unsealed, err := tpm2.UnsealWithSession(dev, sessHandle, objectHandle, base64.StdEncoding.EncodeToString(hmac))
 	if err != nil {
 		return nil, fmt.Errorf("unable to unseal data: %v", err)
 	}
