@@ -257,11 +257,13 @@ func recoverSystemdTPM2Password(t luks.Token) ([]byte, error) {
 		return nil, err
 	}
 
+	info("printing srk from luks2 header: %s", node.SRK)
 	srk, err := base64.StdEncoding.DecodeString(node.SRK)
 	if err != nil {
 		return nil, err
 	}
 
+	info("printing salt from luks2 header: %s", node.Salt)
 	salt, err := base64.StdEncoding.DecodeString(node.Salt)
 	if err != nil {
 		return nil, err
