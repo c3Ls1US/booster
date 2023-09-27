@@ -244,12 +244,25 @@ func recoverSystemdTPM2Password(t luks.Token) ([]byte, error) {
 		PCRBank    string `json:"tpm2-pcr-bank"`    // either sha1 or sha256
 		PolicyHash string `json:"tpm2-policy-hash"` // base64
 		Pin        bool   `json:"tpm2-pin"`
+		Alg        string `json:"tpm2-primary-alg"` // rsa or ecc
+		SRK        string `json:"tpm2_srk"`
+		Salt       string `json:"tpm2_salt"` // base64
 	}
 	if err := json.Unmarshal(t.Payload, &node); err != nil {
 		return nil, err
 	}
 
 	blob, err := base64.StdEncoding.DecodeString(node.Blob)
+	if err != nil {
+		return nil, err
+	}
+
+	srk, err := base64.StdEncoding.DecodeString(node.SRK)
+	if err != nil {
+		return nil, err
+	}
+
+	salt, err := base64.StdEncoding.DecodeString(node.Salt)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +298,7 @@ func recoverSystemdTPM2Password(t luks.Token) ([]byte, error) {
 		authValue = pin
 	}
 
-	password, err := tpm2Unseal(public, private, node.PCRs, bank, policyHash, authValue)
+	password, err := tpm2Unseal(public, private, node.PCRs, bank, policyHash, authValue, node.Alg, srk, salt)
 	if err != nil {
 		return nil, err
 	}
