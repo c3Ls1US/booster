@@ -98,12 +98,22 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	}
 	defer tpm2.FlushContext(dev, sessHandle)
 
-	// create an rsa or ecc template depending on the value of systemd-primary-alg
-	// currently systemd uses two SRK templates as inputs: ECC and an RSA template
-	srkTemplate, err := getSRKTemplate(encryptAlg)
-	if err != nil {
-		return nil, err
+	srkTemplate := tpm2.Public{
+		Type:       tpm2.AlgRSA,
+		NameAlg:    tpm2.AlgSHA256,
+		Attributes: tpm2.FlagFixedTPM | tpm2.FlagFixedParent | tpm2.FlagSensitiveDataOrigin | tpm2.FlagUserWithAuth | tpm2.FlagRestricted | tpm2.FlagDecrypt | tpm2.FlagNoDA,
+		AuthPolicy: nil,
+		RSAParameters: &tpm2.RSAParams{
+			Symmetric: &tpm2.SymScheme{
+				Alg:     tpm2.AlgAES,
+				KeyBits: 128,
+				Mode:    tpm2.AlgCFB,
+			},
+			KeyBits:    2048,
+			ModulusRaw: make([]byte, 256),
+		},
 	}
+
 	srkHandle, _, err := tpm2.CreatePrimary(dev, tpm2.HandleOwner, tpm2.PCRSelection{}, "", "", srkTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("clevis.go/tpm2: can't create primary key: %v", err)
