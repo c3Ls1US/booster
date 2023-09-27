@@ -110,7 +110,8 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 				KeyBits: 128,
 				Mode:    tpm2.AlgCFB,
 			},
-			KeyBits: 2048,
+			KeyBits:    2048,
+			ModulusRaw: make([]byte, 256),
 		},
 	}
 
