@@ -91,6 +91,13 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	}
 	defer dev.Close()
 
+	// create the session, which is unencrypted
+	sessHandle, _, err := policyPCRSession(dev, pcrs, bank, policyHash, password != nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tpm2.FlushContext(dev, sessHandle)
+
 	// create an rsa or ecc template depending on the value of systemd-primary-alg
 	// currently systemd uses two SRK templates as inputs: ECC and an RSA template
 	srkTemplate, err := getSRKTemplate(encryptAlg)
@@ -102,13 +109,6 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 		return nil, fmt.Errorf("clevis.go/tpm2: can't create primary key: %v", err)
 	}
 	defer tpm2.FlushContext(dev, srkHandle)
-
-	// create the session, which is unencrypted
-	sessHandle, _, err := policyPCRSession(dev, pcrs, bank, policyHash, password != nil)
-	if err != nil {
-		return nil, err
-	}
-	defer tpm2.FlushContext(dev, sessHandle)
 
 	// load public/private data into tpm
 	objectHandle, _, err := tpm2.Load(dev, srkHandle, "", public, private)
