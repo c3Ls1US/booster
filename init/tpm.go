@@ -98,6 +98,7 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 	}
 	defer tpm2.FlushContext(dev, sessHandle)
 
+	// RSA srk template
 	srkTemplate := tpm2.Public{
 		Type:       tpm2.AlgRSA,
 		NameAlg:    tpm2.AlgSHA256,
@@ -114,6 +115,7 @@ func tpm2Unseal(public, private []byte, pcrs []int, bank tpm2.Algorithm, policyH
 		},
 	}
 
+	// create the key
 	srkHandle, _, err := tpm2.CreatePrimary(dev, tpm2.HandleOwner, tpm2.PCRSelection{}, "", "", srkTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("clevis.go/tpm2: can't create primary key: %v", err)
